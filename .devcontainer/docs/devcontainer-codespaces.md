@@ -55,16 +55,16 @@ This devcontainer runs Magento with multiple service components via Docker Compo
 
 ### devcontainer.json
 
-By default uses only the base compose file (PHP built-in server):
+By default uses the base compose file plus the nginx overlay (PHP-FPM behind nginx):
 
 ```json
 "dockerComposeFile": [
-  "docker-compose.yaml"
-  // "docker-compose-nginx.yaml" // Uncomment for nginx + PHP-FPM (recommended for Codespaces)
+   "docker-compose.yaml",
+   "docker-compose-nginx.yaml"
 ]
 ```
 
-Uncomment `docker-compose-nginx.yaml` to enable the nginx sidecar with PHP-FPM.
+Remove `docker-compose-nginx.yaml` if you want to fall back to PHP's built-in server mode.
 
 ### commerce.sh Flow
 

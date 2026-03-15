@@ -22,6 +22,52 @@ if [ ! -f ~/.gitconfig ] && [ -n "$VSCODE_GIT_NAME" ] && [ -n "$VSCODE_GIT_EMAIL
     echo "Configured global git user.name as '$VSCODE_GIT_NAME' and user.email as '$VSCODE_GIT_EMAIL'"
 fi
 
+function wait_for_tcp_service() {
+    local service_name=$1
+    local host=$2
+    local port=$3
+    local retries=${4:-60}
+
+    for ((attempt=1; attempt<=retries; attempt++)); do
+        if (echo > /dev/tcp/$host/$port) >/dev/null 2>&1; then
+            echo "$service_name is ready on $host:$port"
+            return 0
+        fi
+
+        echo "Waiting for $service_name on $host:$port ($attempt/$retries)"
+        sleep 2
+    done
+
+    echo "$service_name did not become ready on $host:$port" >&2
+    return 1
+}
+
+function wait_for_http_service() {
+    local service_name=$1
+    local url=$2
+    local retries=${3:-60}
+
+    for ((attempt=1; attempt<=retries; attempt++)); do
+        if curl -ksS --max-time 2 "$url" >/dev/null 2>&1; then
+            echo "$service_name is ready at $url"
+            return 0
+        fi
+
+        echo "Waiting for $service_name at $url ($attempt/$retries)"
+        sleep 2
+    done
+
+    echo "$service_name did not become ready at $url" >&2
+    return 1
+}
+
+function wait_for_dependencies() {
+    wait_for_tcp_service "MariaDB" 127.0.0.1 3306
+    wait_for_tcp_service "Redis" 127.0.0.1 6379
+    wait_for_tcp_service "RabbitMQ" 127.0.0.1 5672
+    wait_for_http_service "OpenSearch" "http://127.0.0.1:9200"
+}
+
 function configure_base_url() {
     local base_url=$1
     local use_secure=$2
@@ -70,6 +116,8 @@ if [ -n "$CODESPACE_NAME" ]; then
 fi
 
 if [ "$SKIP_SETUP" != "true" ]; then
+
+    wait_for_dependencies
 
     if [ ! -f app/etc/env.php ]; then
         if [ -n "$MYSQL_DUMP_FILE" ]; then
