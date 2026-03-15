@@ -133,7 +133,7 @@ if [ "$SKIP_SETUP" != "true" ]; then
         bin/magento config:set --lock-env catalog/search/enable_eav_indexer 1
         bin/magento config:set --lock-env dev/static/sign 0
 
-        bin/magento module:disable Magento_TwoFactorAuth
+        bin/magento module:disable Magento_AdminAdobeImsTwoFactorAuth Magento_TwoFactorAuth
 
         bin/magento cache:enable block_html full_page
 
