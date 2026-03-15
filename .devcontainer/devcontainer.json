@@ -1,0 +1,65 @@
+{
+  "name": "Magento",
+
+  "dockerComposeFile":
+    [
+      "docker-compose.yaml",
+      "docker-compose-nginx.yaml"
+    ],
+  "service": "magento",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "shutdownAction": "stopCompose",
+
+  "forwardPorts": [8443, 9003, 80, 8025],
+
+  "portsAttributes": {
+    "8443": {
+      "label": "Magento (https)"
+    },
+    "9000": {
+      "label": "Xdebug"
+    },
+    "80": {
+      "label": "Magento (http)"
+    },
+    "8025": {
+      "label": "Mailhog Web UI"
+    },
+    "1025": {
+      "label": "Mailhog SMTP"
+    }
+  },
+
+  "postCreateCommand": ".devcontainer/commerce.sh",
+
+  "mounts": [
+    "source=${localEnv:HOME}/.composer,target=/root/.composer,type=bind,consistency=cached,bind-propagation=rshared,selinux=z"
+  ],
+
+  "containerEnv": {
+    "XDEBUG_MODE": "off",
+    "SKIP_SETUP": "false"
+  },
+
+  "hostRequirements": {
+    "memory": "7gb",
+    "cpus": 4,
+    "storage": "32gb"
+  },
+
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "cweijan.vscode-database-client2",
+        "mechatroner.rainbow-csv",
+        "jerrylopez.magento2-extension-pack",
+        "bis2arch.bis2bis-magento-devkit",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "foxundermoon.shell-format",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}

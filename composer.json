@@ -1,0 +1,124 @@
+{
+    "name": "magento/project-community-edition",
+    "description": "Magento Community Edition",
+    "type": "project",
+    "version": "2.4.8",
+    "license": "OSL-3.0",
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "laminas/laminas-dependency-plugin": true,
+            "magento/*": true,
+            "php-http/discovery": true
+        }
+    },
+    "repositories": {
+        "repo": {
+            "type": "composer",
+            "url": "https://repo.magento.com"
+        }
+    },
+    "require": {
+        "magento/composer-root-update-plugin": "^2.0.3",
+        "magento/product-community-edition": "2.4.8",
+        "magento/module-bundle-sample-data": "100.4.*",
+        "magento/module-catalog-rule-sample-data": "100.4.*",
+        "magento/module-catalog-sample-data": "100.4.*",
+        "magento/module-cms-sample-data": "100.4.*",
+        "magento/module-configurable-sample-data": "100.4.*",
+        "magento/module-customer-sample-data": "100.4.*",
+        "magento/module-downloadable-sample-data": "100.4.*",
+        "magento/module-grouped-product-sample-data": "100.4.*",
+        "magento/module-msrp-sample-data": "100.4.*",
+        "magento/module-offline-shipping-sample-data": "100.4.*",
+        "magento/module-product-links-sample-data": "100.4.*",
+        "magento/module-review-sample-data": "100.4.*",
+        "magento/module-sales-rule-sample-data": "100.4.*",
+        "magento/module-sales-sample-data": "100.4.*",
+        "magento/module-swatches-sample-data": "100.4.*",
+        "magento/module-tax-sample-data": "100.4.*",
+        "magento/module-theme-sample-data": "100.4.*",
+        "magento/module-widget-sample-data": "100.4.*",
+        "magento/module-wishlist-sample-data": "100.4.*",
+        "magento/sample-data-media": "100.4.*",
+        "n98/magerun2-dist": "^9.0"
+    },
+    "suggest": {
+        "ext-pcntl": "Need for run processes in parallel mode"
+    },
+    "conflict": {
+        "gene/bluefoot": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Magento\\Setup\\": "setup/src/Magento/Setup/",
+            "Magento\\": "app/code/Magento/",
+            "Zend\\Mvc\\Controller\\": "setup/src/Zend/Mvc/Controller/"
+        },
+        "psr-0": {
+            "": [
+                "app/code/",
+                "generated/code/"
+            ]
+        },
+        "files": [
+            "app/etc/NonComposerComponentRegistration.php"
+        ],
+        "exclude-from-classmap": [
+            "**/dev/**",
+            "**/update/**",
+            "**/Test/**"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Magento\\Sniffs\\": "dev/tests/static/framework/Magento/Sniffs/",
+            "Magento\\Tools\\": "dev/tools/Magento/Tools/",
+            "Magento\\Tools\\Sanity\\": "dev/build/publication/sanity/Magento/Tools/Sanity/",
+            "Magento\\TestFramework\\Inspection\\": "dev/tests/static/framework/Magento/TestFramework/Inspection/",
+            "Magento\\TestFramework\\Utility\\": "dev/tests/static/framework/Magento/TestFramework/Utility/"
+        }
+    },
+    "minimum-stability": "alpha",
+    "prefer-stable": true,
+    "extra": {
+        "component_paths": {
+            "trentrichardson/jquery-timepicker-addon": "lib/web/jquery/jquery-ui-timepicker-addon.js",
+            "components/jquery": [
+                "lib/web/jquery.js",
+                "lib/web/jquery/jquery.min.js",
+                "lib/web/jquery/jquery-migrate.js"
+            ],
+            "blueimp/jquery-file-upload": "lib/web/jquery/fileUploader",
+            "components/jqueryui": [
+                "lib/web/jquery/jquery-ui.js"
+            ],
+            "twbs/bootstrap": [
+                "lib/web/jquery/jquery.tabs.js"
+            ],
+            "tinymce/tinymce": "lib/web/tiny_mce_5"
+        },
+        "magento-force": true,
+        "magento-deploystrategy": "copy",
+        "magento-deploy-ignore": {
+            "*": [
+                "/.gitignore"
+            ]
+        }
+    },
+    "scripts": {
+        "wipe-all": [
+            "@wipe-app"
+        ],
+        "wipe-app": [
+            "n98 db:drop && n98 db:create",
+            "rm -rf generated/* var/* pub/static/* app/etc/config.php app/etc/env.php"
+        ]
+    },
+    "require-dev": {
+        "phpmd/phpmd": "^2.15",
+        "squizlabs/php_codesniffer": "^3.10"
+    }
+}

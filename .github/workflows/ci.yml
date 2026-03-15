@@ -1,0 +1,254 @@
+name: Magento CI
+
+on:
+  pull_request:
+  push:
+env:
+  PHP_VERSION: "8.3"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    container:
+      image: magento/magento-cloud-docker-php:8.3-cli-1.4.3
+    env:
+      COMPOSER_AUTH: ${{ vars.COMPOSER_AUTH }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Composer Auth
+        run: |
+          echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+      - name: Enable sodium extension
+        run: docker-php-ext-enable sodium
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: /tmp/composer-cache
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+      - name: Composer Install
+        run: |
+          export COMPOSER_CACHE_DIR=/tmp/composer-cache
+          composer install --ansi --no-interaction --no-progress --prefer-dist
+          composer dump-autoload
+      - name: Cache workspace
+        uses: actions/cache@v4
+        with:
+          path: |
+            vendor
+            bin
+            app
+            lib
+            setup
+            dev
+            generated
+            var/composer_home
+            pub/errors
+            pub/opt
+            pub/static/.htaccess
+          key: ${{ runner.os }}-workspace-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-workspace-${{ github.run_id }}
+
+  di_compilation:
+    needs: prepare
+    runs-on: ubuntu-latest
+    container:
+      image: magento/magento-cloud-docker-php:8.3-cli-1.4.3
+    env:
+      COMPOSER_AUTH: ${{ vars.COMPOSER_AUTH }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore workspace cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            vendor
+            bin
+            app
+            lib
+            setup
+            dev
+            generated
+            var/composer_home
+            pub/errors
+            pub/opt
+            pub/static/.htaccess
+          key: ${{ runner.os }}-workspace-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-workspace-${{ github.run_id }}
+      - name: Setup Composer Auth
+        run: |
+          echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+      - name: Enable sodium extension
+        run: docker-php-ext-enable sodium
+      - name: Copy config
+        run: cp .github/workflows/etc/config.php app/etc/config.php
+      - name: Clean generated and cache
+        run: rm -rf var/generated var/cache var/page_cache var/view_preprocessed pub/static
+      - name: DI Compile
+        run: php -d memory_limit=-1 bin/magento setup:di:compile
+
+  static_content:
+    needs: prepare
+    runs-on: ubuntu-latest
+    container:
+      image: magento/magento-cloud-docker-php:8.3-cli-1.4.3
+    env:
+      COMPOSER_AUTH: ${{ vars.COMPOSER_AUTH }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore workspace cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            vendor
+            bin
+            app
+            lib
+            setup
+            dev
+            generated
+            var/composer_home
+            pub/errors
+            pub/opt
+            pub/static/.htaccess
+          key: ${{ runner.os }}-workspace-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-workspace-${{ github.run_id }}
+      - name: Setup Composer Auth
+        run: |
+          echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+      - name: Enable sodium extension
+        run: docker-php-ext-enable sodium
+      - name: Copy config
+        run: cp .github/workflows/etc/config.php app/etc/config.php
+      - name: Clean generated and cache
+        run: rm -rf var/generated var/cache var/page_cache var/view_preprocessed pub/static
+      - name: Static Content Deploy (all)
+        run: php -d memory_limit=-1 bin/magento setup:static-content:deploy -j 10 --no-parent --symlink-locale -f
+      - name: Static Content Deploy (adminhtml)
+        run: php -d memory_limit=-1 bin/magento setup:static-content:deploy -j 5 -a adminhtml --symlink-locale --no-html-minify -f
+
+  phpcs:
+    needs: prepare
+    runs-on: ubuntu-latest
+    container:
+      image: magento/magento-cloud-docker-php:8.3-cli-1.4.3
+    env:
+      COMPOSER_AUTH: ${{ vars.COMPOSER_AUTH }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore workspace cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            vendor
+            bin
+            app
+            lib
+            setup
+            dev
+            generated
+            var/composer_home
+            pub/errors
+            pub/opt
+            pub/static/.htaccess
+          key: ${{ runner.os }}-workspace-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-workspace-${{ github.run_id }}
+      - name: Setup Composer Auth
+        run: |
+          echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+      - name: Enable sodium extension
+        run: docker-php-ext-enable sodium
+      - name: PHPCS
+        run: |
+          vendor/bin/phpcs --config-set installed_paths ../../magento/magento-coding-standard/,../../phpcompatibility/php-compatibility
+
+  phpmd:
+    needs: prepare
+    runs-on: ubuntu-latest
+    container:
+      image: magento/magento-cloud-docker-php:8.3-cli-1.4.3
+    env:
+      COMPOSER_AUTH: ${{ vars.COMPOSER_AUTH }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore workspace cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            vendor
+            bin
+            app
+            lib
+            setup
+            dev
+            generated
+            var/composer_home
+            pub/errors
+            pub/opt
+            pub/static/.htaccess
+          key: ${{ runner.os }}-workspace-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-workspace-${{ github.run_id }}
+      - name: Setup Composer Auth
+        run: |
+          echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+      - name: Enable sodium extension
+        run: docker-php-ext-enable sodium
+      - name: Set git safe directory
+        run: git config --global --add safe.directory "$(pwd)"
+      - name: PHPMD
+        run: ./vendor/bin/phpmd app/code xml ./dev/tests/static/testsuite/Magento/Test/Php/_files/phpmd/ruleset.xml --reportfile checkstyle-result.xml || true
+
+  best_practices:
+    needs: prepare
+    runs-on: ubuntu-latest
+    container:
+      image: magento/magento-cloud-docker-php:8.3-cli-1.4.3
+    env:
+      COMPOSER_AUTH: ${{ vars.COMPOSER_AUTH }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore workspace cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            vendor
+            bin
+            app
+            lib
+            setup
+            dev
+            generated
+            var/composer_home
+            pub/errors
+            pub/opt
+            pub/static/.htaccess
+          key: ${{ runner.os }}-workspace-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-workspace-${{ github.run_id }}
+      - name: Setup Composer Auth
+        run: |
+          echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+      - name: Enable sodium extension
+        run: docker-php-ext-enable sodium
+      - name: Set git safe directory
+        run: git config --global --add safe.directory "$(pwd)"
+      - name: Composer validate
+        run: composer validate --ansi

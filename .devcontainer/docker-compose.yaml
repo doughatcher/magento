@@ -1,0 +1,64 @@
+services:
+  magento:
+    env_file: .env
+    # build:
+    #   context: ${COMMERCE_CONTEXT_DIR}
+    #   dockerfile: Dockerfile-magento
+    #   args:
+    #     - NODE_VERSION=--lts
+    image: ghcr.io/doughatcher/magento:latest
+
+    command: sleep infinity
+    volumes:
+      - ../..:/workspaces:z
+      - ${COMMERCE_WWW_DIR}:/var/www/html:z
+      - magento-vendor:/var/www/html/vendor
+      - magento-var:/var/www/html/var
+      - magento-generated:/var/www/html/generated
+    environment:
+      SKIP_SETUP: ${SKIP_SETUP}
+      XDEBUG_MODE: ${XDEBUG_MODE}
+      PHP_VERSION: ${PHP_VERSION}
+      COMPOSER_VERSION: ${COMPOSER_VERSION}
+      TEST_MODE: ${TEST_MODE}
+      COMPOSER_AUTH: ${COMPOSER_AUTH}
+      MYSQL_IMPORT: ${MYSQL_IMPORT}
+
+    ports:
+      - "80:80"
+      - "8443:8443"
+
+  db:
+    image: ${MYSQL_IMAGE}
+    volumes:
+      - db-data:/var/lib/mysql:z
+    network_mode: service:magento
+    environment:
+      MYSQL_ROOT_PASSWORD: magento
+      MYSQL_DATABASE: magento
+      MYSQL_USER: magento
+      MYSQL_PASSWORD: magento
+      MARIADB_MYSQL_LOCALHOST_GRANTS: "ALL PRIVILEGES"
+  redis:
+    image: ${REDIS_IMAGE}
+    network_mode: service:magento
+  ampq:
+    image: ${AMPQ_IMAGE}
+    network_mode: service:magento
+  mailhog:
+    image: ${MAILHOG_IMAGE}
+    network_mode: service:magento
+  opensearch:
+    image: ${SEARCH_IMAGE}
+    network_mode: service:magento
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=fhgLpkH66PwD"
+      - "OPENSEARCH_INITIAL_ADMIN_USER=admin"
+
+volumes:
+  db-data:
+  magento-vendor:
+  magento-var:
+  magento-generated:

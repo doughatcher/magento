@@ -1,0 +1,106 @@
+name: E2E Tests
+
+on:
+  # Manual trigger with customizable URL
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Storefront URL to test against'
+        required: false
+        default: 'https://localhost:8443'
+        type: string
+      run_admin_test:
+        description: 'Run admin login test (requires MAGENTO_ADMIN_USER/PASS secrets)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  determine-config:
+    runs-on: ubuntu-latest
+    outputs:
+      base_url: ${{ steps.config.outputs.base_url }}
+      run_admin: ${{ steps.config.outputs.run_admin }}
+    steps:
+      - name: Determine test configuration
+        id: config
+        run: |
+          echo "base_url=${{ github.event.inputs.base_url }}" >> $GITHUB_OUTPUT
+          echo "run_admin=${{ github.event.inputs.run_admin_test }}" >> $GITHUB_OUTPUT
+
+  e2e-checkout:
+    needs: determine-config
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run checkout E2E test
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ needs.determine-config.outputs.base_url }}
+        run: |
+          echo "Testing against: $PLAYWRIGHT_BASE_URL"
+          npx playwright test tests/e2e/checkout.spec.ts --config tests/e2e/playwright.config.ts
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: checkout-test-results
+          path: |
+            tests/e2e/test-results/
+            tests/e2e/playwright-report/
+          retention-days: 14
+
+  e2e-admin:
+    needs: determine-config
+    if: >-
+      needs.determine-config.outputs.run_admin == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run admin login E2E test
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ needs.determine-config.outputs.base_url }}
+          MAGENTO_ADMIN_URI: ${{ secrets.MAGENTO_ADMIN_URI }}
+          MAGENTO_ADMIN_USER: ${{ secrets.MAGENTO_ADMIN_USER }}
+          MAGENTO_ADMIN_PASS: ${{ secrets.MAGENTO_ADMIN_PASS }}
+        run: |
+          echo "Testing admin login against: $PLAYWRIGHT_BASE_URL"
+          npx playwright test tests/e2e/admin-login.spec.ts --config tests/e2e/playwright.config.ts
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: admin-test-results
+          path: |
+            tests/e2e/test-results/
+            tests/e2e/playwright-report/
+          retention-days: 14

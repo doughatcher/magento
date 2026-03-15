@@ -1,0 +1,11 @@
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile-nginx
+    network_mode: service:magento
+    volumes_from:
+      - magento
+  magento:
+     environment:
+      PHP_MODE: "fpm"
