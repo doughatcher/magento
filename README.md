@@ -114,7 +114,7 @@ Set these in GitHub repository settings:
 
 | Secret/Variable   | Description                           |
 |-------------------|---------------------------------------|
-| `COMPOSER_AUTH`   | (Variable) Magento Marketplace auth JSON |
+| `COMPOSER_AUTH`   | (Secret) Magento Marketplace auth JSON |
 | `MAGENTO_ADMIN_URI` | Admin URL path (e.g., `/backend`)   |
 | `MAGENTO_ADMIN_USER` | Admin username for E2E tests       |
 | `MAGENTO_ADMIN_PASS` | Admin password for E2E tests       |
