@@ -3,6 +3,10 @@ name: Magento CI
 on:
   pull_request:
   push:
+
+permissions:
+  contents: read
+
 env:
   PHP_VERSION: "8.3"
 

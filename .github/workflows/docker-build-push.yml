@@ -17,6 +17,10 @@ on:
       - '.devcontainer/conf/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   REGISTRY: ghcr.io
   NODE_VERSION: --lts
