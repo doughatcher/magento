@@ -10,6 +10,11 @@ if [ -f .env ]; then
     set +o allexport
 fi
 
+if [ -n "$COMPOSER_AUTH" ] && [ ! -f auth.json ]; then
+    echo "$COMPOSER_AUTH" > auth.json
+    echo "Created auth.json from COMPOSER_AUTH environment variable"
+fi
+
 if [ ! -f ~/.gitconfig ] && [ -n "$VSCODE_GIT_NAME" ] && [ -n "$VSCODE_GIT_EMAIL" ]; then
     git config --global user.name "$VSCODE_GIT_NAME"
     git config --global user.email "$VSCODE_GIT_EMAIL"
@@ -164,10 +169,6 @@ fi
 if [ "$TEST_MODE" == "true" ]; then
     echo "devcontainer built successfully and started commerce.sh and ran installation. Skipping server start."
     exit 0
-fi
-
-if [ -n "$SERVER_CMD" ]; then
-    eval "$SERVER_CMD" &
 fi
 
 tail -f var/log/* &

@@ -16,14 +16,14 @@ jobs:
     container:
       image: magento/magento-cloud-docker-php:8.3-cli-1.4.3
     env:
-      COMPOSER_AUTH: ${{ vars.COMPOSER_AUTH }}
+      COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Setup Composer Auth
-        if: ${{ vars.COMPOSER_AUTH != '' }}
-        run: echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+        if: ${{ secrets.COMPOSER_AUTH != '' }}
+        run: echo '${{ secrets.COMPOSER_AUTH }}' > auth.json
       - name: Enable sodium extension
         run: docker-php-ext-enable sodium
       - name: Cache Composer
@@ -63,7 +63,7 @@ jobs:
     container:
       image: magento/magento-cloud-docker-php:8.3-cli-1.4.3
     env:
-      COMPOSER_AUTH: ${{ vars.COMPOSER_AUTH }}
+      COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -87,8 +87,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-workspace-${{ github.run_id }}
       - name: Setup Composer Auth
-        if: ${{ vars.COMPOSER_AUTH != '' }}
-        run: echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+        if: ${{ secrets.COMPOSER_AUTH != '' }}
+        run: echo '${{ secrets.COMPOSER_AUTH }}' > auth.json
       - name: Enable sodium extension
         run: docker-php-ext-enable sodium
       - name: Copy config
@@ -104,7 +104,7 @@ jobs:
     container:
       image: magento/magento-cloud-docker-php:8.3-cli-1.4.3
     env:
-      COMPOSER_AUTH: ${{ vars.COMPOSER_AUTH }}
+      COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -128,8 +128,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-workspace-${{ github.run_id }}
       - name: Setup Composer Auth
-        if: ${{ vars.COMPOSER_AUTH != '' }}
-        run: echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+        if: ${{ secrets.COMPOSER_AUTH != '' }}
+        run: echo '${{ secrets.COMPOSER_AUTH }}' > auth.json
       - name: Enable sodium extension
         run: docker-php-ext-enable sodium
       - name: Copy config
@@ -147,7 +147,7 @@ jobs:
     container:
       image: magento/magento-cloud-docker-php:8.3-cli-1.4.3
     env:
-      COMPOSER_AUTH: ${{ vars.COMPOSER_AUTH }}
+      COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -171,8 +171,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-workspace-${{ github.run_id }}
       - name: Setup Composer Auth
-        if: ${{ vars.COMPOSER_AUTH != '' }}
-        run: echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+        if: ${{ secrets.COMPOSER_AUTH != '' }}
+        run: echo '${{ secrets.COMPOSER_AUTH }}' > auth.json
       - name: Enable sodium extension
         run: docker-php-ext-enable sodium
       - name: PHPCS
@@ -185,7 +185,7 @@ jobs:
     container:
       image: magento/magento-cloud-docker-php:8.3-cli-1.4.3
     env:
-      COMPOSER_AUTH: ${{ vars.COMPOSER_AUTH }}
+      COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -209,8 +209,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-workspace-${{ github.run_id }}
       - name: Setup Composer Auth
-        if: ${{ vars.COMPOSER_AUTH != '' }}
-        run: echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+        if: ${{ secrets.COMPOSER_AUTH != '' }}
+        run: echo '${{ secrets.COMPOSER_AUTH }}' > auth.json
       - name: Enable sodium extension
         run: docker-php-ext-enable sodium
       - name: Set git safe directory
@@ -224,7 +224,7 @@ jobs:
     container:
       image: magento/magento-cloud-docker-php:8.3-cli-1.4.3
     env:
-      COMPOSER_AUTH: ${{ vars.COMPOSER_AUTH }}
+      COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -248,8 +248,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-workspace-${{ github.run_id }}
       - name: Setup Composer Auth
-        if: ${{ vars.COMPOSER_AUTH != '' }}
-        run: echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+        if: ${{ secrets.COMPOSER_AUTH != '' }}
+        run: echo '${{ secrets.COMPOSER_AUTH }}' > auth.json
       - name: Enable sodium extension
         run: docker-php-ext-enable sodium
       - name: Set git safe directory
