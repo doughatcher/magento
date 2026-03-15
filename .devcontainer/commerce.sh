@@ -181,6 +181,6 @@ if [ "$PHP_MODE" == "fpm" ]; then
     echo "Running in FPM mode"
     php-fpm --allow-to-run-as-root --nodaemonize
 elif [ "$PHP_MODE" == "builtin" ]; then
-    echo "Running in built-in server mode"
-    php -S 127.0.0.1:$PORT -t ./pub/ ./phpserver/router.php
+    echo "Running in built-in server mode on 0.0.0.0:$PORT"
+    php -S 0.0.0.0:$PORT -t ./pub/ ./phpserver/router.php
 fi
