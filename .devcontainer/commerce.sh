@@ -61,7 +61,7 @@ if [ -n "$CODESPACE_NAME" ]; then
     PORT=80
     BASEURL="https://$CODESPACE_NAME-$PORT.app.github.dev/"
     USE_SECURE_URL="0"
-    PHP_MODE="fpm"
+    PHP_MODE="builtin"
     echo "Setting base URL to $BASEURL"
 fi
 
