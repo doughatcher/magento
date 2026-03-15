@@ -58,10 +58,14 @@ fi
 : ${BASEURL:="$PROTOCOL://localhost:$PORT/"}
 
 if [ -n "$CODESPACE_NAME" ]; then
-    PORT=80
-    BASEURL="https://$CODESPACE_NAME-$PORT.app.github.dev/"
+    if [ "$PHP_MODE" == "fpm" ]; then
+        PORT=80
+        BASEURL="https://$CODESPACE_NAME-$PORT.app.github.dev/"
+    else
+        PORT=8080
+        BASEURL="http://$CODESPACE_NAME-$PORT.app.github.dev/"
+    fi
     USE_SECURE_URL="0"
-    PHP_MODE="fpm"
     echo "Setting base URL to $BASEURL"
 fi
 
