@@ -22,8 +22,8 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup Composer Auth
-        run: |
-          echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+        if: ${{ vars.COMPOSER_AUTH != '' }}
+        run: echo '${{ vars.COMPOSER_AUTH }}' > auth.json
       - name: Enable sodium extension
         run: docker-php-ext-enable sodium
       - name: Cache Composer
@@ -87,8 +87,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-workspace-${{ github.run_id }}
       - name: Setup Composer Auth
-        run: |
-          echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+        if: ${{ vars.COMPOSER_AUTH != '' }}
+        run: echo '${{ vars.COMPOSER_AUTH }}' > auth.json
       - name: Enable sodium extension
         run: docker-php-ext-enable sodium
       - name: Copy config
@@ -128,8 +128,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-workspace-${{ github.run_id }}
       - name: Setup Composer Auth
-        run: |
-          echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+        if: ${{ vars.COMPOSER_AUTH != '' }}
+        run: echo '${{ vars.COMPOSER_AUTH }}' > auth.json
       - name: Enable sodium extension
         run: docker-php-ext-enable sodium
       - name: Copy config
@@ -171,8 +171,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-workspace-${{ github.run_id }}
       - name: Setup Composer Auth
-        run: |
-          echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+        if: ${{ vars.COMPOSER_AUTH != '' }}
+        run: echo '${{ vars.COMPOSER_AUTH }}' > auth.json
       - name: Enable sodium extension
         run: docker-php-ext-enable sodium
       - name: PHPCS
@@ -209,8 +209,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-workspace-${{ github.run_id }}
       - name: Setup Composer Auth
-        run: |
-          echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+        if: ${{ vars.COMPOSER_AUTH != '' }}
+        run: echo '${{ vars.COMPOSER_AUTH }}' > auth.json
       - name: Enable sodium extension
         run: docker-php-ext-enable sodium
       - name: Set git safe directory
@@ -248,8 +248,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-workspace-${{ github.run_id }}
       - name: Setup Composer Auth
-        run: |
-          echo '${{ vars.COMPOSER_AUTH }}' > auth.json
+        if: ${{ vars.COMPOSER_AUTH != '' }}
+        run: echo '${{ vars.COMPOSER_AUTH }}' > auth.json
       - name: Enable sodium extension
         run: docker-php-ext-enable sodium
       - name: Set git safe directory
