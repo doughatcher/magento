@@ -3,8 +3,8 @@
 
   "dockerComposeFile":
     [
-      "docker-compose.yaml",
-      "docker-compose-nginx.yaml"
+      "docker-compose.yaml"
+      // "docker-compose-nginx.yaml" // Uncomment for nginx + PHP-FPM (recommended for Codespaces)
     ],
   "service": "magento",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
