@@ -1,6 +1,6 @@
 {
     "id": "magento",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "name": "Magento Open Source",
     "description": "Magento 2 (Open Source / Community Edition) development environment with PHP-FPM, MariaDB, Redis, RabbitMQ, OpenSearch, MailHog, and an optional Nginx sidecar. Auto-installs Magento on first start.",
     "documentationURL": "https://github.com/doughatcher/magento/tree/main/.template",
@@ -10,7 +10,7 @@
         "phpVersion": {
             "type": "string",
             "description": "PHP version. Must align with the Magento version you intend to install.",
-            "default": "8.3",
+            "default": "8.4",
             "proposals": ["8.1", "8.2", "8.3", "8.4"]
         },
         "composerVersion": {

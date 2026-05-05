@@ -47,26 +47,28 @@ if [ -d "$REPO_ROOT/.github" ]; then
 fi
 
 # Templatize hardcoded values that should become user-facing options.
-# Note: the working tree uses real values (php8.3, etc.) so it stays runnable;
-# this step lifts those values into ${templateOption:*} markers in the artifact.
-PHP_FILES=(
-    "$DST/.devcontainer/Dockerfile-magento"
-    "$DST/.devcontainer/.env"
-)
-for f in "${PHP_FILES[@]}"; do
-    [ -f "$f" ] || continue
-    sed -i \
-        -e 's|php8\.3|php${templateOption:phpVersion}|g' \
-        -e 's|/etc/php/8\.3|/etc/php/${templateOption:phpVersion}|g' \
-        -e 's|php-fpm8\.3|php-fpm${templateOption:phpVersion}|g' \
-        -e 's|^PHP_VERSION=8\.3$|PHP_VERSION=${templateOption:phpVersion}|' \
-        -e 's|^COMPOSER_VERSION=latest-stable$|COMPOSER_VERSION=${templateOption:composerVersion}|' \
-        "$f"
-done
+# The working tree's Dockerfile uses `ARG PHP_VERSION=8.4` then references
+# `${PHP_VERSION}` everywhere — so we only need to lift the ARG default and
+# the matching .env value. Same pattern for Node + Composer if/when those
+# become options.
+DOCKERFILE="$DST/.devcontainer/Dockerfile-magento"
+ENVFILE="$DST/.devcontainer/.env"
 
-# Composer version: the option is currently advisory; the working tree pulls
-# `latest-stable` and we don't pin it in the template either. To honor the
-# option, end users can edit the `composer-installer | php --` line manually.
+if [ -f "$DOCKERFILE" ]; then
+    sed -i \
+        -e 's|^ARG PHP_VERSION=8\.4$|ARG PHP_VERSION=${templateOption:phpVersion}|' \
+        "$DOCKERFILE"
+fi
+
+if [ -f "$ENVFILE" ]; then
+    sed -i \
+        -e 's|^PHP_VERSION=8\.4$|PHP_VERSION=${templateOption:phpVersion}|' \
+        -e 's|^COMPOSER_VERSION=latest-stable$|COMPOSER_VERSION=${templateOption:composerVersion}|' \
+        "$ENVFILE"
+fi
+
+# Composer version: the option is advisory; the Dockerfile installs
+# latest-stable and the .env exports the option's value for downstream tools.
 
 # Plumb commerceEdition into the bootstrap fallback.
 COMMERCE_SH="$DST/.devcontainer/commerce.sh"
