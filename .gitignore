@@ -125,6 +125,8 @@ LocalValetDriver.php
 !.devcontainer/**
 !/.github
 !/.github/**
+!/.template
+!/.template/**
 
 auth.json
 

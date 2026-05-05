@@ -119,6 +119,27 @@ Set these in GitHub repository settings:
 | `MAGENTO_ADMIN_USER` | Admin username for E2E tests       |
 | `MAGENTO_ADMIN_PASS` | Admin password for E2E tests       |
 
+## Devcontainer Template
+
+This repository's `.devcontainer/` is also published as an official [Dev Container Template](https://containers.dev/implementors/templates/) so any developer can spin up the same environment in a single command:
+
+```bash
+devcontainer templates apply \
+  --template-id ghcr.io/doughatcher/devcontainer-templates/magento \
+  --workspace-folder ./my-magento-project
+```
+
+The template is built from this working tree on every `template-v*` tag (see `.github/workflows/publish-template.yml`). The `.template/build.sh` script copies the live `.devcontainer/` and supporting files into a scratch dir, lifts hardcoded values into `${templateOption:*}` markers, then publishes via `devcontainer templates publish`. There's no separate template repo to keep in sync — the working tree is the source of truth.
+
+To cut a release:
+
+```bash
+# bump .template/devcontainer-template.json:version
+git commit -am "Bump template to vX.Y.Z"
+git tag template-vX.Y.Z
+git push origin main --tags
+```
+
 ## License
 
 OSL-3.0

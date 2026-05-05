@@ -1,0 +1,71 @@
+name: Publish Devcontainer Template
+
+on:
+  push:
+    tags:
+      - 'template-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Build template artifact
+        run: |
+          mkdir -p /tmp/template-out
+          ./.template/build.sh /tmp/template-out
+
+      - name: Validate built artifact
+        run: |
+          test -f /tmp/template-out/magento/devcontainer-template.json
+          test -f /tmp/template-out/magento/.devcontainer/devcontainer.json
+          # Simulate apply: substitute defaults, then read-configuration to confirm parseability.
+          mkdir -p /tmp/applied
+          cp -a /tmp/template-out/magento/. /tmp/applied/
+          python3 - <<'PY'
+          import json, re, pathlib
+          src = pathlib.Path("/tmp/applied")
+          manifest = json.loads((src / "devcontainer-template.json").read_text())
+          defaults = {k: v["default"] for k, v in manifest.get("options", {}).items()}
+          for f in src.rglob("*"):
+              if not f.is_file(): continue
+              try: text = f.read_text()
+              except UnicodeDecodeError: continue
+              new = text
+              for k, v in defaults.items():
+                  new = re.sub(r'\${templateOption:' + re.escape(k) + r'}', v, new)
+              if new != text:
+                  f.write_text(new)
+          (src / "devcontainer-template.json").unlink(missing_ok=True)
+          (src / "NOTES.md").unlink(missing_ok=True)
+          PY
+          devcontainer read-configuration --workspace-folder /tmp/applied --include-merged-configuration > /dev/null
+          echo "Validated."
+
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+
+      - name: Publish template
+        # Publishes to the shared doughatcher/devcontainer-templates OCI namespace,
+        # alongside any future AEM / EDS templates that follow the same pattern
+        # (each from its own working repo, all under one namespace).
+        run: |
+          devcontainer templates publish \
+            -r ghcr.io \
+            -n ${{ github.repository_owner }}/devcontainer-templates \
+            /tmp/template-out

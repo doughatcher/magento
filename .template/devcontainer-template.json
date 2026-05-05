@@ -1,0 +1,36 @@
+{
+    "id": "magento",
+    "version": "0.2.0",
+    "name": "Magento Open Source",
+    "description": "Magento 2 (Open Source / Community Edition) development environment with PHP-FPM, MariaDB, Redis, RabbitMQ, OpenSearch, MailHog, and an optional Nginx sidecar. Auto-installs Magento on first start.",
+    "documentationURL": "https://github.com/doughatcher/magento/tree/main/.template",
+    "publisher": "Doug Hatcher",
+    "licenseURL": "https://github.com/doughatcher/magento/blob/main/LICENSE",
+    "options": {
+        "phpVersion": {
+            "type": "string",
+            "description": "PHP version. Must align with the Magento version you intend to install.",
+            "default": "8.3",
+            "proposals": ["8.1", "8.2", "8.3", "8.4"]
+        },
+        "composerVersion": {
+            "type": "string",
+            "description": "Composer version to install. Use 'latest-stable' for the most recent 2.x.",
+            "default": "latest-stable",
+            "proposals": ["latest-stable", "2.6.0", "2.7.0", "2.8.0"]
+        },
+        "commerceEdition": {
+            "type": "string",
+            "description": "Composer project to bootstrap when no composer.json is present in the workspace.",
+            "default": "magento/project-community-edition",
+            "proposals": [
+                "magento/project-community-edition"
+            ]
+        }
+    },
+    "platforms": ["Any"],
+    "optionalPaths": [
+        ".github/*",
+        "tests/*"
+    ]
+}

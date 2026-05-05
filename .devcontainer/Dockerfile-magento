@@ -61,10 +61,11 @@ COPY conf/php-fpm/fpm-pool.conf /etc/php/8.3/fpm/pool.d/www.conf
 
 RUN ln -s /usr/sbin/php-fpm8.3 /usr/sbin/php-fpm
 
-# install mkcert
-RUN curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
-RUN chmod +x mkcert-v*-linux-amd64
-RUN sudo cp mkcert-v*-linux-amd64 /usr/local/bin/mkcert
+# install mkcert (multi-arch)
+RUN ARCH=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/') \
+    && curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/$ARCH" \
+    && chmod +x mkcert-v*-linux-* \
+    && sudo cp mkcert-v*-linux-* /usr/local/bin/mkcert
 
 # composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
