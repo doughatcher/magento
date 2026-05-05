@@ -2,7 +2,7 @@
     "name": "magento/project-community-edition",
     "description": "Magento Community Edition",
     "type": "project",
-    "version": "2.4.8",
+    "version": "2.4.8-p4",
     "license": "OSL-3.0",
     "config": {
         "preferred-install": "dist",
@@ -22,7 +22,7 @@
     },
     "require": {
         "magento/composer-root-update-plugin": "^2.0.3",
-        "magento/product-community-edition": "2.4.8",
+        "magento/product-community-edition": "2.4.8-p4",
         "magento/module-bundle-sample-data": "100.4.*",
         "magento/module-catalog-rule-sample-data": "100.4.*",
         "magento/module-catalog-sample-data": "100.4.*",
