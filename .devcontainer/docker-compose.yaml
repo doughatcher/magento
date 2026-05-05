@@ -1,20 +1,38 @@
 services:
   magento:
     env_file: .env
-    # build:
-    #   context: ${COMMERCE_CONTEXT_DIR}
-    #   dockerfile: Dockerfile-magento
-    #   args:
-    #     - NODE_VERSION=--lts
-    image: ghcr.io/doughatcher/magento:latest
+    # `image:` + `build:` together gives you a toggle without editing files:
+    #   docker compose pull magento      → use the pre-built image from GHCR
+    #                                       (built by .github/workflows/docker-build-push.yml)
+    #   docker compose build magento     → rebuild locally, tagged as MAGENTO_IMAGE
+    #   docker compose up                → uses whichever image is already local;
+    #                                       if none, runs the build block
+    # Override the image by exporting MAGENTO_IMAGE=your-tag before running.
+    image: ${MAGENTO_IMAGE:-ghcr.io/doughatcher/magento:latest}
+    build:
+      context: ${COMMERCE_CONTEXT_DIR}
+      dockerfile: Dockerfile-magento
+      args:
+        - BASE_IMAGE=${BASE_IMAGE_MAGENTO:-mcr.microsoft.com/devcontainers/base:bookworm}
+        - DEBIAN_CODENAME=${DEBIAN_CODENAME:-bookworm}
+        - PHP_VERSION=${PHP_VERSION:-8.4}
+        - NODE_VERSION=${NODE_VERSION:-22}
+        - NVM_VERSION=${NVM_VERSION:-v0.40.3}
+        - GH_VERSION=${GH_VERSION:-2.89.0}
 
     command: sleep infinity
     volumes:
-      - ../..:/workspaces:z
-      - ${COMMERCE_WWW_DIR}:/var/www/html:z
+      # `:cached` tells Docker Desktop on macOS to tolerate brief host↔container
+      # staleness in exchange for ~2-3× faster reads — huge for composer autoload
+      # dump and any directory-walk workload. `:z` is an SELinux relabel hint;
+      # it's a no-op on macOS and required on SELinux hosts. Both can coexist.
+      - ../..:/workspaces:cached,z
+      - ${COMMERCE_WWW_DIR}:/var/www/html:cached,z
       - magento-vendor:/var/www/html/vendor
       - magento-var:/var/www/html/var
       - magento-generated:/var/www/html/generated
+      - magento-node-modules:/var/www/html/node_modules
+      - magento-npm-cache:/root/.npm
     environment:
       SKIP_SETUP: ${SKIP_SETUP}
       XDEBUG_MODE: ${XDEBUG_MODE}
@@ -23,6 +41,11 @@ services:
       TEST_MODE: ${TEST_MODE}
       COMPOSER_AUTH: ${COMPOSER_AUTH}
       MYSQL_IMPORT: ${MYSQL_IMPORT}
+      # OPcache on/off toggle — set OPCACHE_ENABLE=0 in .env and restart the
+      # container if you ever need to disable it (e.g. troubleshooting a
+      # stale-file issue). commerce.sh writes a late-loading override INI
+      # that flips opcache.enable and opcache.enable_cli to 0 on startup.
+      OPCACHE_ENABLE: ${OPCACHE_ENABLE:-1}
 
     ports:
       - "80:80"
@@ -39,8 +62,8 @@ services:
       MYSQL_USER: magento
       MYSQL_PASSWORD: magento
       MARIADB_MYSQL_LOCALHOST_GRANTS: "ALL PRIVILEGES"
-  redis:
-    image: ${REDIS_IMAGE}
+  valkey:
+    image: ${VALKEY_IMAGE}
     network_mode: service:magento
   ampq:
     image: ${AMPQ_IMAGE}
@@ -54,6 +77,10 @@ services:
     environment:
       - discovery.type=single-node
       - plugins.security.disabled=true
+      # Bumped from -Xms256m -Xmx512m. The 512 MB cap was OOM-thrashing during
+      # catalog reindexes on non-trivial catalogs; 1 GB gives headroom without
+      # starving the rest of the dev stack on an 8-16 GB host.
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx1g"
       - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=fhgLpkH66PwD"
       - "OPENSEARCH_INITIAL_ADMIN_USER=admin"
 
@@ -62,3 +89,5 @@ volumes:
   magento-vendor:
   magento-var:
   magento-generated:
+  magento-node-modules:
+  magento-npm-cache:

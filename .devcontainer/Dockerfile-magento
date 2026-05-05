@@ -1,10 +1,23 @@
-FROM mcr.microsoft.com/devcontainers/base:bullseye
+# BuildKit cache mounts (`RUN --mount=type=cache`) work in modern Docker (24+)
+# with the default built-in frontend — no `# syntax=` directive needed.
 
-# Install php-fpm
-RUN curl -sS https://packages.sury.org/php/apt.gpg | apt-key add - \
-    && echo "deb https://packages.sury.org/php/ bullseye main" | tee /etc/apt/sources.list.d/php.list
+ARG BASE_IMAGE=mcr.microsoft.com/devcontainers/base:bookworm
+FROM ${BASE_IMAGE}
 
-RUN apt-get update && apt-get install -y \
+ARG PHP_VERSION=8.4
+ARG NODE_VERSION=22
+ARG NVM_VERSION=v0.40.3
+ARG GH_VERSION=2.89.0
+ARG DEBIAN_CODENAME=bookworm
+
+# Install php-fpm — modern signed-by apt source (apt-key is deprecated)
+RUN curl -sSLo /tmp/sury-php.gpg https://packages.sury.org/php/apt.gpg && \
+    install -D /tmp/sury-php.gpg /usr/share/keyrings/sury-php.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/sury-php.gpg] https://packages.sury.org/php/ ${DEBIAN_CODENAME} main" | tee /etc/apt/sources.list.d/php.list
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     libzip-dev \
     git \
     unzip \
@@ -21,45 +34,44 @@ RUN apt-get update && apt-get install -y \
     redis \
     vim \
     curl \
-    libzip-dev \
-    unzip \
-    wget \
     libmagickwand-dev \
     imagemagick \
     libjpeg-dev \
     \
-    php8.3-fpm \
-    php8.3-zip \
-    php8.3-simplexml \
-    php8.3-curl \
-    php8.3-intl \
-    php8.3-soap \
-    php8.3-bcmath \
-    php8.3-gd \
-    php8.3-mysql \
-    php8.3-mbstring \
-    php8.3-swoole \
-    php8.3-xdebug \
+    php${PHP_VERSION}-fpm \
+    php${PHP_VERSION}-zip \
+    php${PHP_VERSION}-simplexml \
+    php${PHP_VERSION}-curl \
+    php${PHP_VERSION}-intl \
+    php${PHP_VERSION}-soap \
+    php${PHP_VERSION}-bcmath \
+    php${PHP_VERSION}-gd \
+    php${PHP_VERSION}-mysql \
+    php${PHP_VERSION}-mbstring \
+    php${PHP_VERSION}-swoole \
+    php${PHP_VERSION}-xdebug \
+    php${PHP_VERSION}-redis \
     \
-    libnss3-tools\
-    inotify-tools \
-    \
-    && apt clean
+    libnss3-tools \
+    inotify-tools
 
 # configure php
-RUN echo 'memory_limit = 2G' >> /etc/php/8.3/fpm/php.ini
-RUN echo 'max_input_vars = 10000' >> /etc/php/8.3/fpm/php.ini
-RUN echo 'memory_limit = -1' >> /etc/php/8.3/fpm/conf.d/memory_limit.ini
-
-RUN echo 'memory_limit = 2G' >> /etc/php/8.3/cli/php.ini
-RUN echo 'max_input_vars = 10000' >> /etc/php/8.3/cli/php.ini
-RUN echo 'memory_limit = -1' >> /etc/php/8.3/cli/conf.d/memory_limit.ini
+RUN echo 'memory_limit = 2G' >> /etc/php/${PHP_VERSION}/fpm/php.ini && \
+    echo 'max_input_vars = 10000' >> /etc/php/${PHP_VERSION}/fpm/php.ini && \
+    echo 'memory_limit = -1' >> /etc/php/${PHP_VERSION}/fpm/conf.d/memory_limit.ini && \
+    echo 'memory_limit = 2G' >> /etc/php/${PHP_VERSION}/cli/php.ini && \
+    echo 'max_input_vars = 10000' >> /etc/php/${PHP_VERSION}/cli/php.ini && \
+    echo 'memory_limit = -1' >> /etc/php/${PHP_VERSION}/cli/conf.d/memory_limit.ini
 
 RUN mkdir -p /run/php
 
-COPY conf/php-fpm/fpm-pool.conf /etc/php/8.3/fpm/pool.d/www.conf
+COPY conf/php-fpm/fpm-pool.conf /etc/php/${PHP_VERSION}/fpm/pool.d/www.conf
 
-RUN ln -s /usr/sbin/php-fpm8.3 /usr/sbin/php-fpm
+RUN ln -s /usr/sbin/php-fpm${PHP_VERSION} /usr/sbin/php-fpm
+
+# OPcache + realpath tuning, dev-safe (validate_timestamps=1, revalidate_freq=2)
+COPY conf/php/99-opcache.ini /etc/php/${PHP_VERSION}/fpm/conf.d/99-opcache.ini
+COPY conf/php/99-opcache.ini /etc/php/${PHP_VERSION}/cli/conf.d/99-opcache.ini
 
 # install mkcert (multi-arch)
 RUN ARCH=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/') \
@@ -75,43 +87,51 @@ RUN composer --version
 RUN curl -o /usr/local/bin/n98 https://files.magerun.net/n98-magerun2.phar && chmod +x /usr/local/bin/n98
 
 # xdebug config
-COPY conf/php/99-xdebug.ini /etc/php/8.3/fpm/conf.d/99-xdebug.ini
-COPY conf/php/99-xdebug.ini /etc/php/8.3/cli/conf.d/99-xdebug.ini
+COPY conf/php/99-xdebug.ini /etc/php/${PHP_VERSION}/fpm/conf.d/99-xdebug.ini
+COPY conf/php/99-xdebug.ini /etc/php/${PHP_VERSION}/cli/conf.d/99-xdebug.ini
 
 # SSH known hosts for GitHub and Bitbucket
-RUN mkdir -p ~/.ssh/
-RUN curl -L https://api.github.com/meta | jq -r '.ssh_keys | .[]' | sed -e 's/^/github.com /' >> ~/.ssh/known_hosts
-RUN curl https://bitbucket.org/site/ssh >> ~/.ssh/known_hosts
+RUN mkdir -p ~/.ssh/ \
+    && curl -L https://api.github.com/meta | jq -r '.ssh_keys | .[]' | sed -e 's/^/github.com /' >> ~/.ssh/known_hosts \
+    && curl https://bitbucket.org/site/ssh >> ~/.ssh/known_hosts
 
 # configure mailhog
-RUN apt update && apt install -y golang && go get github.com/mailhog/mhsendmail && apt -y remove golang && apt autoclean
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt update && apt install -y golang \
+    && go get github.com/mailhog/mhsendmail \
+    && apt -y remove golang \
+    && cp ~/go/bin/mhsendmail /usr/bin/mhsendmail \
+    && echo 'sendmail_path ="mhsendmail --smtp-addr=127.0.0.1:1025"' >> /etc/php/${PHP_VERSION}/fpm/php.ini \
+    && echo 'sendmail_path ="mhsendmail --smtp-addr=127.0.0.1:1025"' >> /etc/php/${PHP_VERSION}/cli/php.ini
 
-RUN cp ~/go/bin/mhsendmail /usr/bin/mhsendmail
-RUN echo 'sendmail_path ="mhsendmail --smtp-addr=127.0.0.1:1025"' >> /etc/php/8.3/fpm/php.ini
-RUN echo 'sendmail_path ="mhsendmail --smtp-addr=127.0.0.1:1025"' >> /etc/php/8.3/cli/php.ini
+# Node.js via nvm (system-wide, no per-user $HOME/.nvm)
+ENV NVM_DIR=/usr/local/nvm
+RUN git clone --depth 1 --branch ${NVM_VERSION} https://github.com/nvm-sh/nvm.git ${NVM_DIR} && \
+    printf 'export NVM_DIR=%s\n[ -s "%s/nvm.sh" ] && . "%s/nvm.sh"\n' "${NVM_DIR}" "${NVM_DIR}" "${NVM_DIR}" > /etc/profile.d/nvm.sh && \
+    echo '. /etc/profile.d/nvm.sh' >> /root/.bashrc
 
-# Node.js via nvm
-ARG NODE_VERSION=--lts
-
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash && \
-    export NVM_DIR="$HOME/.nvm" && \
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
-    nvm install $NODE_VERSION && \
-    nvm use $NODE_VERSION && \
-    npm install -g npm@latest
-
-ENV NODE_PATH $NVM_DIR/versions/node/$NODE_VERSION/lib/node_modules
-ENV PATH      $NVM_DIR/versions/node/$NODE_VERSION/bin:$PATH
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    . /etc/profile.d/nvm.sh && \
+    nvm install ${NODE_VERSION} && \
+    nvm use ${NODE_VERSION} && \
+    npm install -g npm@latest && \
+    NODE_FULL=$(nvm version ${NODE_VERSION}) && \
+    ln -sf "${NVM_DIR}/versions/node/${NODE_FULL}/bin/node" /usr/local/bin/node && \
+    ln -sf "${NVM_DIR}/versions/node/${NODE_FULL}/bin/npm" /usr/local/bin/npm && \
+    ln -sf "${NVM_DIR}/versions/node/${NODE_FULL}/bin/npx" /usr/local/bin/npx
 
 # gh CLI
-RUN sudo mkdir -p -m 755 /etc/apt/keyrings \
-	&& out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-	&& cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-	&& sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-	&& sudo mkdir -p -m 755 /etc/apt/sources.list.d \
-	&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-	&& sudo apt update \
-	&& sudo apt install gh -y && sudo apt clean
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    sudo mkdir -p -m 755 /etc/apt/keyrings \
+    && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+    && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
+    && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+    && sudo mkdir -p -m 755 /etc/apt/sources.list.d \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+    && sudo apt update \
+    && sudo apt install gh -y
 
-RUN echo 'export WORKSPACE_DIR=$(pwd)' >> /root/.bashrc
-RUN echo '[ -f "$WORKSPACE_DIR/.env" ] && source "$WORKSPACE_DIR/.env"' >> /root/.bashrc
+RUN echo 'export WORKSPACE_DIR=$(pwd)' >> /root/.bashrc \
+    && echo '[ -f "$WORKSPACE_DIR/.env" ] && source "$WORKSPACE_DIR/.env"' >> /root/.bashrc

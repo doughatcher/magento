@@ -22,6 +22,10 @@ if [ ! -f ~/.gitconfig ] && [ -n "$VSCODE_GIT_NAME" ] && [ -n "$VSCODE_GIT_EMAIL
     echo "Configured global git user.name as '$VSCODE_GIT_NAME' and user.email as '$VSCODE_GIT_EMAIL'"
 fi
 
+# Speed up git clones — Composer falls back to git source for any package
+# whose dist zip 404s. Parallel fetches make that tolerable.
+git config --global fetch.parallel 10
+
 function wait_for_tcp_service() {
     local service_name=$1
     local host=$2
@@ -63,9 +67,12 @@ function wait_for_http_service() {
 
 function wait_for_dependencies() {
     wait_for_tcp_service "MariaDB" 127.0.0.1 3306
-    wait_for_tcp_service "Redis" 127.0.0.1 6379
+    wait_for_tcp_service "Valkey" 127.0.0.1 6379
     wait_for_tcp_service "RabbitMQ" 127.0.0.1 5672
-    wait_for_http_service "OpenSearch" "http://127.0.0.1:9200"
+    # OpenSearch needs more than just an open TCP socket — wait for the
+    # cluster to actually report a usable status before letting `setup:install`
+    # run, otherwise indexer setup races against JVM warmup.
+    wait_for_http_service "OpenSearch" "http://127.0.0.1:9200/_cluster/health?wait_for_status=yellow&timeout=2s"
 }
 
 function configure_base_url() {
@@ -104,13 +111,12 @@ fi
 : ${BASEURL:="$PROTOCOL://localhost:$PORT/"}
 
 if [ -n "$CODESPACE_NAME" ]; then
-    if [ "$PHP_MODE" == "fpm" ]; then
-        PORT=80
-        BASEURL="https://$CODESPACE_NAME-$PORT.app.github.dev/"
-    else
-        PORT=8080
-        BASEURL="http://$CODESPACE_NAME-$PORT.app.github.dev/"
-    fi
+    # Codespaces: force PHP built-in server. Simpler stack, no fastcgi
+    # handshake to debug, no nginx sidecar required. GitHub fronts the
+    # forwarded port with HTTPS regardless of what's running inside.
+    PHP_MODE="builtin"
+    PORT=80
+    BASEURL="https://$CODESPACE_NAME-$PORT.app.github.dev/"
     USE_SECURE_URL="0"
     echo "Setting base URL to $BASEURL"
 fi
@@ -224,6 +230,22 @@ if [ "$TEST_MODE" == "true" ]; then
 fi
 
 tail -f var/log/* &
+
+# OPcache toggle: baseline tuning lives at /etc/php/${PHP_VERSION}/*/conf.d/
+# 99-opcache.ini (dev-safe: re-checks file mtimes every 2s, so edits are
+# picked up transparently). If OPCACHE_ENABLE=0 in .env, drop a higher-
+# numbered override INI that flips both opcache.enable and opcache.enable_cli
+# off before PHP starts reading config.
+OPCACHE_ENABLE="${OPCACHE_ENABLE:-1}"
+for conf_dir in "/etc/php/${PHP_VERSION}/fpm/conf.d" "/etc/php/${PHP_VERSION}/cli/conf.d"; do
+    override="${conf_dir}/999-opcache-override.ini"
+    if [ "$OPCACHE_ENABLE" = "0" ] || [ "$OPCACHE_ENABLE" = "false" ]; then
+        echo "OPCACHE_ENABLE=$OPCACHE_ENABLE — disabling OPcache in $conf_dir"
+        { echo "opcache.enable=0"; echo "opcache.enable_cli=0"; } > "$override"
+    else
+        rm -f "$override"
+    fi
+done
 
 if [ "$PHP_MODE" == "fpm" ]; then
     echo "Running in FPM mode"
