@@ -114,7 +114,6 @@ RUN git clone --depth 1 --branch ${NVM_VERSION} https://github.com/nvm-sh/nvm.gi
 RUN . /etc/profile.d/nvm.sh && \
     nvm install ${NODE_VERSION} && \
     nvm use ${NODE_VERSION} && \
-    npm install -g npm@latest && \
     NODE_FULL=$(nvm version ${NODE_VERSION}) && \
     ln -sf "${NVM_DIR}/versions/node/${NODE_FULL}/bin/node" /usr/local/bin/node && \
     ln -sf "${NVM_DIR}/versions/node/${NODE_FULL}/bin/npm" /usr/local/bin/npm && \
