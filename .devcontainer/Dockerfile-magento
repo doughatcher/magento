@@ -99,7 +99,7 @@ RUN mkdir -p ~/.ssh/ \
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt update && apt install -y golang \
-    && go get github.com/mailhog/mhsendmail \
+    && go install github.com/mailhog/mhsendmail@latest \
     && apt -y remove golang \
     && cp ~/go/bin/mhsendmail /usr/bin/mhsendmail \
     && echo 'sendmail_path ="mhsendmail --smtp-addr=127.0.0.1:1025"' >> /etc/php/${PHP_VERSION}/fpm/php.ini \
