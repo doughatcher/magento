@@ -111,8 +111,7 @@ RUN git clone --depth 1 --branch ${NVM_VERSION} https://github.com/nvm-sh/nvm.gi
     printf 'export NVM_DIR=%s\n[ -s "%s/nvm.sh" ] && . "%s/nvm.sh"\n' "${NVM_DIR}" "${NVM_DIR}" "${NVM_DIR}" > /etc/profile.d/nvm.sh && \
     echo '. /etc/profile.d/nvm.sh' >> /root/.bashrc
 
-RUN --mount=type=cache,target=/root/.npm,sharing=locked \
-    . /etc/profile.d/nvm.sh && \
+RUN . /etc/profile.d/nvm.sh && \
     nvm install ${NODE_VERSION} && \
     nvm use ${NODE_VERSION} && \
     npm install -g npm@latest && \
